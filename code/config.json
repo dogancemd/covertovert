@@ -2,7 +2,8 @@
   "covert_channel_code": "CSC-PSV-TCP-SN",
   "send": {
     "parameters": {
-      "log_file_name": "Example_UDPTimingInterarrivalChannelSender.log"
+      "log_file_name": "Example_UDPTimingInterarrivalChannelSender.log",
+      "send_invalid_message": false
     }
   },
   "receive": {

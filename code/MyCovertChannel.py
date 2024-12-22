@@ -35,10 +35,11 @@ class MyCovertChannel(CovertChannelBase):
         super().send(p)
         return seq
 
-    def send(self, log_file_name):
+    def send(self, log_file_name, send_invalid_message:bool=False):
         """
         - In this function, you expected to create a random message (using function/s in CovertChannelBase), and send it to the receiver container. Entire sending operations should be handled in this function.
         - After the implementation, please rewrite this comment part to explain your code basically.
+        - If send_invalid_message is True, invalid messages created by the PRNG are also sent.
         """
         binary_message = self.generate_random_binary_message_with_logging(log_file_name)
         message = super().convert_string_message_to_binary(binary_message)  
@@ -70,6 +71,8 @@ class MyCovertChannel(CovertChannelBase):
                         number_to_send = fake_message + prime_modulus
                     next_bit = True
                     break
+                elif send_invalid_message:
+                    current_seq = self.send_packet_calculating_seq_number(current_seq, fake_message)
             if not next_bit:
                 if real_message % 2 == bit1:
                     number_to_send = real_message
