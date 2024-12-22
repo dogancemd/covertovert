@@ -19,12 +19,19 @@ class MyCovertChannel(CovertChannelBase):
 
 
     def calculate_seq_number_difference(self, current_seq:int, seq_to_check:int):
+        """
+        - This function calculates the difference between two sequence numbers considering overflows.
+        """
         if seq_to_check < current_seq:
             seq_to_check = seq_to_check + 0xFFFFFFFF + 1
         return seq_to_check - current_seq
 
 
     def send_packet_calculating_seq_number(self, current_seq: int, number:int, dst:str = "receiver"):
+        """
+        - This function sends a packet with the desired number.
+        - Returns the new sequence number.
+        """
         seq = (current_seq + number) % 0xFFFFFFFF
         p = IP(dst = dst) / TCP(seq = seq)
         super().send(p)
@@ -80,6 +87,9 @@ class MyCovertChannel(CovertChannelBase):
         
 
     def packet_handler(self, packet):
+        """
+        - This function is used to extract the sequence number from the TCP packet.
+        """
         if packet.haslayer(TCP):
             # Get the TCP layer of the packet
             tcp_layer = packet[TCP]
@@ -91,6 +101,9 @@ class MyCovertChannel(CovertChannelBase):
 
 
     def sniffProcess(self, queue: Queue):
+        """
+         - This function is used to sniff the packets and put the sequence numbers to the queue.
+        """
         add_queue_func = lambda x : queue.put(self.packet_handler(x))
         sniff(
             iface = "eth0",
@@ -99,6 +112,9 @@ class MyCovertChannel(CovertChannelBase):
         )
 
     def get_bit_char(self, number):
+        """
+            - This function is used to get the bit character of the number.
+        """
         if number % 4 == 0: #00 case
             return "00"
         elif number % 4 == 1: #01 case
