@@ -1,9 +1,7 @@
 from CovertChannelBase import CovertChannelBase
 import random
 from scapy.all import sr1,IP, TCP, sniff
-import socket
 from multiprocessing import Process, Queue
-import threading
 
 class MyCovertChannel(CovertChannelBase):
     """
@@ -43,7 +41,7 @@ class MyCovertChannel(CovertChannelBase):
         - After the implementation, please rewrite this comment part to explain your code basically.
         """
         binary_message = self.generate_random_binary_message_with_logging(log_file_name)
-        binary_message = self.convert_string_message_to_binary("Naber.")
+        message = super().convert_string_message_to_binary(binary_message)  
         current_seq = 0
         #Create a random seed for main random number generator
         random_seed = random.randint(0,10000)
@@ -81,10 +79,8 @@ class MyCovertChannel(CovertChannelBase):
                 number_to_send = number_to_send
             else:
                 number_to_send = number_to_send + 2*prime_modulus
-            print((str(bit2) + str(bit1)))
             current_seq = self.send_packet_calculating_seq_number(current_seq, number_to_send)
-           
-        
+        return message
 
     def packet_handler(self, packet):
         """
@@ -140,34 +136,28 @@ class MyCovertChannel(CovertChannelBase):
         random_seed = self.calculate_seq_number_difference(current_seq, seq_num)
         current_seq = seq_num
         main_prng = random.Random(random_seed)
-        print("Random seed is: ",random_seed)
         #Get the prime modulus
         seq_num = pkt_queue.get()
         prime_modulus = self.calculate_seq_number_difference(current_seq, seq_num)
         current_seq = seq_num
-        print(f"Prime modulus is : {prime_modulus}")
         #Start processing
         awaiting_number = main_prng.randint(0, 100000) % 100
         message = ""
         message = ""
         char = ""
-        print(current_seq)
         while True:
             seq_num = pkt_queue.get()
             number = self.calculate_seq_number_difference(current_seq, seq_num)
             if number % prime_modulus == awaiting_number % prime_modulus:
                 awaiting_number = main_prng.randint(0, 100000) % 100
                 char = char + self.get_bit_char(number)
-                print(self.get_bit_char(number))
                 current_seq = seq_num
             if len(char) == 8:
                 str_char = super().convert_eight_bits_to_character(char)
-                print(char, str_char)
                 message += str_char
                 char = ""
                 if str_char == '.':
-                    print(message)
                     break
         sniffProcess.terminate()
-
-        # Get the seed from sender and establish random number generator
+        super().log_message(message, log_file_name)
+        return message
