@@ -3,12 +3,15 @@
   "send": {
     "parameters": {
       "log_file_name": "Example_UDPTimingInterarrivalChannelSender.log",
-      "send_invalid_message": false
+      "seed": 45,
+      "prime_modulus": 7
     }
   },
   "receive": {
     "parameters": {
-      "log_file_name": "Example_UDPTimingInterarrivalChannelReceiver.log"
+      "log_file_name": "Example_UDPTimingInterarrivalChannelReceiver.log",
+      "seed": 45,
+      "prime_modulus": 7
     }
   }
 }

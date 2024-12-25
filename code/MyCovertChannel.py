@@ -35,53 +35,42 @@ class MyCovertChannel(CovertChannelBase):
         super().send(p)
         return seq
 
-    def send(self, log_file_name, send_invalid_message:bool=False):
+    def send(self, log_file_name, seed: int, prime_modulus: int):
         """
         - In this function, you expected to create a random message (using function/s in CovertChannelBase), and send it to the receiver container. Entire sending operations should be handled in this function.
         - After the implementation, please rewrite this comment part to explain your code basically.
         - If send_invalid_message is True, invalid messages created by the PRNG are also sent.
         """
         binary_message = self.generate_random_binary_message_with_logging(log_file_name)
-        message = super().convert_string_message_to_binary(binary_message)  
+        message = super().convert_string_message_to_binary("Naber.")
+        binary_message = self.convert_string_message_to_binary("Naber.")
         current_seq = 0
-        #Create a random seed for main random number generator
-        random_seed = random.randint(0,10000)
-        main_prng = random.Random(random_seed)
+        main_prng = random.Random(seed)
         secondary_prng = random.Random(random.randint(0,10000))
-        #Send the seed to receiver
-        current_seq = self.send_packet_calculating_seq_number(current_seq,random_seed)
-        #Choose a prime for validation
-        prime_modulus_list = [7,11,13,17,23,29,31,37]
-        prime_modulus = random.choice(prime_modulus_list)
-        #Send the prime
-        current_seq = self.send_packet_calculating_seq_number(current_seq,prime_modulus)
-        #Send the message
+        real_message = main_prng.randint(8 * prime_modulus, 20 * prime_modulus)
         for i in range(int(len(binary_message)/2)):
-            bit2 = int(binary_message[i*2])
+            change_awaiting_number = False
+            bit0 = int(binary_message[i*2])
             bit1 = int(binary_message[i*2+1])
+            
             number_to_send = 0
-            real_message = main_prng.randint(0, 100000) % 100
-            next_bit = False
-            for i in range(50):
-                fake_message = secondary_prng.randint(14, 100)
-                if fake_message % prime_modulus == real_message % prime_modulus:
-                    if fake_message % 2 == bit1:
-                        number_to_send = fake_message
-                    else :
-                        number_to_send = fake_message + prime_modulus
-                    next_bit = True
-                    break
-                elif send_invalid_message:
-                    current_seq = self.send_packet_calculating_seq_number(current_seq, fake_message)
-            if not next_bit:
-                if real_message % 2 == bit1:
-                    number_to_send = real_message
-                else :
-                    number_to_send = real_message + prime_modulus
-            if int((number_to_send % 4)/2) == bit2:
-                number_to_send = number_to_send
+            fake_message = secondary_prng.randint(8 * prime_modulus, 20 * prime_modulus)
+            if bit0 == 0:
+                while real_message % prime_modulus == fake_message % prime_modulus:
+                    fake_message = secondary_prng.randint(8 * prime_modulus, 20 * prime_modulus)
+                number_to_send = fake_message
             else:
-                number_to_send = number_to_send + 2*prime_modulus
+                number_to_send = real_message + secondary_prng.randint(-5, 5) * prime_modulus
+                change_awaiting_number = True
+            are_evenness_same = (number_to_send % 2 == real_message % 2)
+            if bit1 == 0:
+                if are_evenness_same:
+                    number_to_send += prime_modulus
+            else:
+                if not are_evenness_same:
+                    number_to_send += prime_modulus   
+            if change_awaiting_number:
+                real_message = main_prng.randint(8 * prime_modulus, 20 * prime_modulus)
             current_seq = self.send_packet_calculating_seq_number(current_seq, number_to_send)
         return message
 
@@ -110,19 +99,7 @@ class MyCovertChannel(CovertChannelBase):
             prn = add_queue_func
         )
 
-    def get_bit_char(self, number):
-        """
-            - This function is used to get the bit character of the number.
-        """
-        if number % 4 == 0: #00 case
-            return "00"
-        elif number % 4 == 1: #01 case
-            return "01"
-        elif number % 4 == 2: #10 case
-            return "10"
-        else: #11 case
-            return "11"
-    def receive(self, log_file_name):
+    def receive(self, log_file_name, seed: int, prime_modulus: int):
         """
         - In this function, you are expected to receive and decode the transferred message. Because there are many types of covert channels, the receiver implementation depends on the chosen covert channel type, and you may not need to use the functions in CovertChannelBase.
         - After the implementation, please rewrite this comment part to explain your code basically.
@@ -134,27 +111,23 @@ class MyCovertChannel(CovertChannelBase):
         sniffProcess.daemon = True
         sniffProcess.start()
         current_seq = 0
-        # Get the seed from sender and establish random number generator
-        seq_num = pkt_queue.get()
-        random_seed = self.calculate_seq_number_difference(current_seq, seq_num)
-        current_seq = seq_num
-        main_prng = random.Random(random_seed)
-        #Get the prime modulus
-        seq_num = pkt_queue.get()
-        prime_modulus = self.calculate_seq_number_difference(current_seq, seq_num)
-        current_seq = seq_num
+        main_prng = random.Random(seed)
         #Start processing
-        awaiting_number = main_prng.randint(0, 100000) % 100
+        awaiting_number = main_prng.randint(8 * prime_modulus, 20 * prime_modulus)
         message = ""
         message = ""
         char = ""
         while True:
             seq_num = pkt_queue.get()
             number = self.calculate_seq_number_difference(current_seq, seq_num)
+            bit1 = "1" if (number % 2 == awaiting_number % 2) else "0"
             if number % prime_modulus == awaiting_number % prime_modulus:
-                awaiting_number = main_prng.randint(0, 100000) % 100
-                char = char + self.get_bit_char(number)
-                current_seq = seq_num
+                bit0 = "1"
+                awaiting_number = main_prng.randint(8 * prime_modulus, 20 * prime_modulus)
+            else:
+                bit0 = "0"
+            char += bit0 + bit1
+            current_seq = seq_num
             if len(char) == 8:
                 str_char = super().convert_eight_bits_to_character(char)
                 message += str_char
