@@ -2,16 +2,18 @@
   "covert_channel_code": "CSC-PSV-TCP-SN",
   "send": {
     "parameters": {
-      "log_file_name": "Example_UDPTimingInterarrivalChannelSender.log",
+      "log_file_name": "TCP_SequenceNumberChannelSender.log",
       "seed": 45,
-      "prime_modulus": 7
+      "prime_modulus": 97,
+      "dst": "receiver"
     }
   },
   "receive": {
     "parameters": {
-      "log_file_name": "Example_UDPTimingInterarrivalChannelReceiver.log",
+      "log_file_name": "TCP_SequenceNumberChannelReceiver.log",
       "seed": 45,
-      "prime_modulus": 7
+      "prime_modulus": 97,
+      "src": "sender"
     }
   }
 }

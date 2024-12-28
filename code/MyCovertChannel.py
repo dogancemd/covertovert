@@ -10,7 +10,6 @@ class MyCovertChannel(CovertChannelBase):
     """
     def __init__(self):
         """
-        - You can edit __init__.
         """
         
         pass
@@ -35,15 +34,15 @@ class MyCovertChannel(CovertChannelBase):
         super().send(p)
         return seq
 
-    def send(self, log_file_name, seed: int, prime_modulus: int):
+    def send(self, log_file_name, seed: int, prime_modulus: int, dst:str = "receiver"):
         """
-        - In this function, you expected to create a random message (using function/s in CovertChannelBase), and send it to the receiver container. Entire sending operations should be handled in this function.
-        - After the implementation, please rewrite this comment part to explain your code basically.
-        - If send_invalid_message is True, invalid messages created by the PRNG are also sent.
+        - seed: int = should be an integer value to initialie a random number generator.  Should be the same as given to receive function.
+        - prime_modulus: int = should be an integer value which is an odd prime number between 7 and 97. Should be the same as given to receive function.
+        - dst: host name or ip address of the receiver. The default value is "receiver"
+        - Creates a random binary message and send 2 bit by 2 bit covertly according to algorithm explained at README.md
         """
-        binary_message = self.generate_random_binary_message_with_logging(log_file_name)
-        message = super().convert_string_message_to_binary("Naber.")
-        binary_message = self.convert_string_message_to_binary("Naber.")
+        binary_message = self.generate_random_binary_message_with_logging(log_file_name,min_length=16,max_length=16)
+        message = super().convert_string_message_to_binary(binary_message)
         current_seq = 0
         main_prng = random.Random(seed)
         secondary_prng = random.Random(random.randint(0,10000))
@@ -71,7 +70,7 @@ class MyCovertChannel(CovertChannelBase):
                     number_to_send += prime_modulus   
             if change_awaiting_number:
                 real_message = main_prng.randint(8 * prime_modulus, 20 * prime_modulus)
-            current_seq = self.send_packet_calculating_seq_number(current_seq, number_to_send)
+            current_seq = self.send_packet_calculating_seq_number(current_seq, number_to_send, dst)
         return message
 
     def packet_handler(self, packet):
@@ -88,26 +87,29 @@ class MyCovertChannel(CovertChannelBase):
         return -1
 
 
-    def sniffProcess(self, queue: Queue):
+    def sniffProcess(self, queue: Queue, src: str):
         """
          - This function is used to sniff the packets and put the sequence numbers to the queue.
         """
         add_queue_func = lambda x : queue.put(self.packet_handler(x))
         sniff(
             iface = "eth0",
-            filter = "tcp and src host sender",
+            filter = f"tcp and src host {src}",
             prn = add_queue_func
         )
 
-    def receive(self, log_file_name, seed: int, prime_modulus: int):
+    def receive(self, log_file_name, seed: int, prime_modulus: int, src: str = "sender"):
         """
-        - In this function, you are expected to receive and decode the transferred message. Because there are many types of covert channels, the receiver implementation depends on the chosen covert channel type, and you may not need to use the functions in CovertChannelBase.
-        - After the implementation, please rewrite this comment part to explain your code basically.
+        - seed: int = should be an integer value to initialie a random number generator. Should be the same as given to send function.
+        - prime_modulus: int = should be an integer value which is an odd prime number between 7 and 97.  Should be the same as given to send function.
+        - src: host name or ip address of the sender. The default value is "sender"
+        - Start sniffing packets on a process and puts them in a queue. Concurrently, the packets are processed and a message is formed.
+        - When the dot character is received, the message is logged and returned.
         """
         self.log_message("", log_file_name)
         #Start Listening
         pkt_queue = Queue()
-        sniffProcess = Process(target=self.sniffProcess, kwargs={"queue": pkt_queue})
+        sniffProcess = Process(target=self.sniffProcess, kwargs={"queue": pkt_queue, "src": src})
         sniffProcess.daemon = True
         sniffProcess.start()
         current_seq = 0
