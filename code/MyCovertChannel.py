@@ -95,7 +95,8 @@ class MyCovertChannel(CovertChannelBase):
         sniff(
             iface = "eth0",
             filter = f"tcp and src host {src}",
-            prn = add_queue_func
+            prn = add_queue_func,
+            store = False
         )
 
     def receive(self, log_file_name, seed: int, prime_modulus: int, src: str = "sender"):
