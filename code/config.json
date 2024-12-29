@@ -5,7 +5,8 @@
       "log_file_name": "TCP_SequenceNumberChannelSender.log",
       "seed": 45,
       "prime_modulus": 97,
-      "dst": "receiver"
+      "dst": "receiver",
+      "port": 8000
     }
   },
   "receive": {

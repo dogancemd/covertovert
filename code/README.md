@@ -53,9 +53,10 @@ When measured the approximate capacity is between 76 and 80 bits per second. Thi
 
 ## Parameters
 #### Sender
-- seed:A integer value to initialie a random number generator. Should be the same with seed given to receiver.
+- seed:A integer value to initialize a random number generator. Should be the same with seed given to receiver.
 - prime_modulus:an integer value which is an odd prime number between 7 and 97. Should be the same as given to receiver.
 - dst: Should be the ip address or host name of the receiver host. If not given, default value is "receiver"
+- port: Should pe the port number of the receiver. If not given the default value is 8000.
 #### Receiver
 - seed:A integer value to initialie a random number generator. Should be the same with seed given to sender.
 - prime_modulus:an integer value which is an odd prime number between 7 and 97. Should be the same as given to sender.

@@ -24,17 +24,17 @@ class MyCovertChannel(CovertChannelBase):
         return seq_to_check - current_seq
 
 
-    def send_packet_calculating_seq_number(self, current_seq: int, number:int, dst:str = "receiver"):
+    def send_packet_calculating_seq_number(self, current_seq: int, number:int, dst:str = "receiver", port: int = "8000"):
         """
         - This function sends a packet with the desired number.
         - Returns the new sequence number.
         """
         seq = (current_seq + number) % 0xFFFFFFFF
-        p = IP(dst = dst) / TCP(seq = seq)
+        p = IP(dst = dst) / TCP(seq = seq, dport = port)
         super().send(p)
         return seq
 
-    def send(self, log_file_name, seed: int, prime_modulus: int, dst:str = "receiver"):
+    def send(self, log_file_name, seed: int, prime_modulus: int, dst:str = "receiver", port: int = 8000):
         """
         - seed: int = should be an integer value to initialie a random number generator.  Should be the same as given to receive function.
         - prime_modulus: int = should be an integer value which is an odd prime number between 7 and 97. Should be the same as given to receive function.
@@ -70,7 +70,7 @@ class MyCovertChannel(CovertChannelBase):
                     number_to_send += prime_modulus   
             if change_awaiting_number:
                 real_message = main_prng.randint(8 * prime_modulus, 20 * prime_modulus)
-            current_seq = self.send_packet_calculating_seq_number(current_seq, number_to_send, dst)
+            current_seq = self.send_packet_calculating_seq_number(current_seq, number_to_send, dst, port)
         return message
 
     def packet_handler(self, packet):
